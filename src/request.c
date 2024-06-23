@@ -23,6 +23,8 @@ Sc_Request *sc_parse_http_request(char *request) {
         req->method = SC_GET;
     } else if (strcmp(method, "POST") == 0) {
         req->method = SC_POST;
+    } else if (strcmp(method, "PUT") == 0) {
+        req->method = SC_PUT;
     } else {
         req->method = SC_UNK;
     }

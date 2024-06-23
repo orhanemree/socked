@@ -195,3 +195,23 @@ void sc_post(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
 
     server->route_count++;
 }
+
+
+void sc_put(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+
+    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    memset(route, 0, sizeof(Sc_Route));
+
+    server->routes = (Sc_Route *) realloc(server->routes,
+        (server->route_count+1)*sizeof(Sc_Route));
+
+    if (server->routes == NULL) {
+        printf("Cannot realloc memory.\n");
+    }
+
+    server->routes[server->route_count].method = SC_PUT;
+    server->routes[server->route_count].uri = strdup(uri);
+    server->routes[server->route_count].handler = handler;
+
+    server->route_count++;
+}
