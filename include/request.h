@@ -7,6 +7,7 @@
 
 typedef enum {
     SC_GET,
+    SC_POST,
     SC_UNK // unknown method
 } Sc_Method;
 

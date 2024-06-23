@@ -21,6 +21,8 @@ Sc_Request *sc_parse_http_request(char *request) {
 
     if (strcmp(method, "GET") == 0) {
         req->method = SC_GET;
+    } else if (strcmp(method, "POST") == 0) {
+        req->method = SC_POST;
     } else {
         req->method = SC_UNK;
     }

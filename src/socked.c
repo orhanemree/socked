@@ -21,6 +21,7 @@ Sc_Server *sc_server() {
     int soc = socket(AF_INET, SOCK_STREAM, 0);
     server->socket = soc;    
     server->bind = 0;
+    server->route_count = 0;
 
     // reuse address
     int opt = 1;
@@ -72,10 +73,12 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
         recv(client_soc, request, SC_MAX_REQ, 0);
         printf("%s\n", request);
         Sc_Request *req = sc_parse_http_request(request);
+        req->header_count = 0;
 
         // prepare response
         Sc_Response *res = (Sc_Response *) malloc(sizeof(Sc_Response));
         memset(res, 0, sizeof(Sc_Response));
+        res->header_count = 0;
 
         strcpy(res->version, SC_HTTP_VERSION); // by default
 
@@ -167,6 +170,26 @@ void sc_get(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
     }
 
     server->routes[server->route_count].method = SC_GET;
+    server->routes[server->route_count].uri = strdup(uri);
+    server->routes[server->route_count].handler = handler;
+
+    server->route_count++;
+}
+
+
+void sc_post(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+
+    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    memset(route, 0, sizeof(Sc_Route));
+
+    server->routes = (Sc_Route *) realloc(server->routes,
+        (server->route_count+1)*sizeof(Sc_Route));
+
+    if (server->routes == NULL) {
+        printf("Cannot realloc memory.\n");
+    }
+
+    server->routes[server->route_count].method = SC_POST;
     server->routes[server->route_count].uri = strdup(uri);
     server->routes[server->route_count].handler = handler;
 

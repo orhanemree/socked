@@ -44,4 +44,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res);
 void sc_get(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 
+void sc_post(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+
+
 #endif // SC_SOCKED_H
