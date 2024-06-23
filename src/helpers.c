@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "../include/helpers.h"
 
 
-char *trim(char *str) {
+char *sc_trim(char *str) {
 
-    // trim given string
     // use free() after
 
     size_t len = strlen(str);
