@@ -24,6 +24,12 @@ void handle_put(Sc_Request *req, Sc_Response *res) {
 }
 
 
+void handle_delete(Sc_Request *req, Sc_Response *res) {
+    sc_set_status(res, 403, "Forbidden");
+    sc_set_body(res, "CANNOT DELETE!\n");
+}
+
+
 int main() {
 
     Sc_Server *server = sc_server();
@@ -31,6 +37,7 @@ int main() {
     sc_get(server, "/", &handle_index);
     sc_post(server, "/admin", &handle_admin);
     sc_put(server, "/foo", &handle_put);
+    sc_delete(server, "/bar", &handle_delete);
 
     sc_listen(server, "127.0.0.1", 8080);
 }
