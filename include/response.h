@@ -15,14 +15,16 @@ typedef struct {
 } Sc_Response;
 
 
+char *__sc_get_headers_as_text(Sc_Header *headers, size_t header_count);
+
+
 char *sc_get_res_as_text(Sc_Response *res);
 
 
-// TODO: add sc_has_header()
-// TODO: add sc_set_header()
-
-
 void sc_set_status(Sc_Response *res, int status_code, char *status_message);
+
+
+void sc_set_header(Sc_Response *res, char *header_name, char *header_value);
 
 
 void sc_set_body(Sc_Response *res, char *data);
