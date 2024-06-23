@@ -71,7 +71,7 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
 
         // read request and parse to Sc_Request object
         recv(client_soc, request, SC_MAX_REQ, 0);
-        printf("%s\n", request);
+        printf("==Request==\n%s====\n", request);
         Sc_Request *req = sc_parse_http_request(request);
         req->header_count = 0;
 
@@ -123,7 +123,8 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
             route_matched = 1;
 
             // match method
-            if (server->routes[i].method == req->method) {
+            if (server->routes[i].method == SC_ALL ||
+                server->routes[i].method == req->method) {
 
                 // route and method matched, run callback
                 server->routes[i].handler(req, res);
@@ -236,3 +237,22 @@ void sc_delete(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
     server->route_count++;
 }
 
+
+void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+
+    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    memset(route, 0, sizeof(Sc_Route));
+
+    server->routes = (Sc_Route *) realloc(server->routes,
+        (server->route_count+1)*sizeof(Sc_Route));
+
+    if (server->routes == NULL) {
+        printf("Cannot realloc memory.\n");
+    }
+
+    server->routes[server->route_count].method = SC_ALL;
+    server->routes[server->route_count].uri = strdup(uri);
+    server->routes[server->route_count].handler = handler;
+
+    server->route_count++;
+}

@@ -12,7 +12,7 @@ char *__sc_get_headers_as_text(Sc_Header *headers, size_t header_count) {
     size_t text_len = 0;
 
     if (header_count == 0) {
-        return "\r\n";
+        return "";
     }
 
     for (int i = 0; i < header_count; ++i) {

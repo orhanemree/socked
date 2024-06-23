@@ -10,6 +10,7 @@ typedef enum {
     SC_POST,
     SC_PUT,
     SC_DELETE,
+    SC_ALL, // match with all methods
     SC_UNK // unknown method
 } Sc_Method;
 

@@ -12,7 +12,14 @@ void handle_index(Sc_Request *req, Sc_Response *res) {
 
     sc_set_header(res, "Server", "socked");
     sc_set_header(res, "Content-Type", "text/plain");
+    sc_set_header(res, "Connection", "close");
 }
+
+
+void handle_all(Sc_Request *req, Sc_Response *res) {
+    sc_set_body(res, "Hi!");
+}
+
 
 
 int main() {
@@ -20,6 +27,7 @@ int main() {
     Sc_Server *server = sc_server();
 
     sc_get(server, "/", &handle_index);
+    sc_route(server, "/all", &handle_all);
 
     sc_listen(server, "127.0.0.1", 8080);
 }

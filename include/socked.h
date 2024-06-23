@@ -53,4 +53,7 @@ void sc_put(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 void sc_delete(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 
+void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+
+
 #endif // SC_SOCKED_H
