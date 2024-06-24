@@ -43,7 +43,7 @@ char *sc_get_res_as_text(Sc_Response *res) {
     char *headers_as_text = __sc_get_headers_as_text(res->headers, res->header_count);
 
     // calculate length of response
-    size_t len = 13; // for first line
+    size_t len = 14; // for first line
     len += strlen(res->status_message) + 2; // for CRLF
     len += strlen(headers_as_text) + 2; // for CRLF
     len += strlen(res->body);
