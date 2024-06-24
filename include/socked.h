@@ -8,7 +8,7 @@
 #include "response.h"
 
 
-#define SC_MAX_REQ 1024*4
+#define SC_MAX_REQ 1024*8
 #define SC_HTTP_VERSION "HTTP/1.1"
 
 
@@ -36,6 +36,9 @@ Sc_Server *sc_server();
 
 
 void sc_listen(Sc_Server *server, const char *host, int port);
+
+
+void __sc_handle_request(Sc_Server *server, int client_socket);
 
 
 int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res);

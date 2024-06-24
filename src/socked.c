@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "../include/socked.h"
 
@@ -57,56 +58,102 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
     printf("Server running on http://%s:%d\n", host, port);
 
 
+    // setup select
+    fd_set current_sockets, readable_sockets;
+    int max_sockets_so_far = 0;
+
+    FD_ZERO(&current_sockets);
+    FD_SET(soc, &current_sockets);
+
+    max_sockets_so_far = soc;
+
     // accept loop
-    int client_soc;
-    char request[SC_MAX_REQ];
 
     while (1) {
 
-        client_soc = accept(soc, 0, 0);
+        // select readable socket
+        readable_sockets = current_sockets;
 
-        if (client_soc == -1) {
-            close(client_soc);
+        int s = select(max_sockets_so_far+1, &readable_sockets, NULL, NULL, NULL);
+
+        if (s < 0) {
+            perror("Select error");
+            exit(EXIT_FAILURE);
         }
 
-        // read request and parse to Sc_Request object
-        recv(client_soc, request, SC_MAX_REQ, 0);
-        printf("==Request==\n%s====\n", request);
-        Sc_Request *req = sc_parse_http_request(request);
-        req->header_count = 0;
+        for (int i = 0; i < max_sockets_so_far+1; ++i) {
 
-        // prepare response
-        Sc_Response *res = (Sc_Response *) malloc(sizeof(Sc_Response));
-        memset(res, 0, sizeof(Sc_Response));
-        res->header_count = 0;
+            if (FD_ISSET(i, &readable_sockets)) {
 
-        strcpy(res->version, SC_HTTP_VERSION); // by default
+                if (i == soc) {
 
-        // route found, method matched but status code and body didnt specified yet
-        // return 200 OK and empty body by default
-        res->status_code = 200;
-        res->status_message = strdup("Ok"); 
-        res->body = strdup("");
+                    // handle new connection
+                    int client_socket = accept(soc, 0, 0);
 
-        // route if matched rule exists else return default response
-        int matched = __sc_route_request(server, req, res);
+                    if (client_socket == -1) { // just in case
+                        close(client_socket);
+                        return;
+                    }
 
-        // get response as string
-        char *response;
-        response = sc_get_res_as_text(res);
+                    if (client_socket > max_sockets_so_far) {
+                        max_sockets_so_far = client_socket;
+                    }
 
-        // send response to client
-        send(client_soc, response, strlen(response), 0);
+                    FD_SET(client_socket, &current_sockets);
 
-        // free memory and close connection
-        free(response);
-        sc_free_request(req);
-        sc_free_response(res);
-        close(client_soc);
+                } else {
+
+                    // handle existing connection recv request
+                    __sc_handle_request(server, i);
+                    FD_CLR(i, &current_sockets);
+                }
+            }
+        }
     }
 
-    printf("Exiting\n");
     close(soc);
+}
+
+
+void __sc_handle_request(Sc_Server *server, int client_socket) {
+
+    // read request and parse to Sc_Request object
+
+    char request[SC_MAX_REQ];
+
+    recv(client_socket, request, SC_MAX_REQ, 0);
+    printf("==Request==\n%s====\n", request);
+    Sc_Request *req = sc_parse_http_request(request);
+    req->header_count = 0;
+
+    // prepare response
+    Sc_Response *res = (Sc_Response *) malloc(sizeof(Sc_Response));
+    memset(res, 0, sizeof(Sc_Response));
+    res->header_count = 0;
+
+    strcpy(res->version, SC_HTTP_VERSION); // by default
+
+    // route found, method matched but status code and body didnt specified yet
+    // return 200 OK and empty body by default
+    res->status_code = 200;
+    res->status_message = strdup("Ok"); 
+    res->body = strdup("");
+
+    // route if matched rule exists else return default response
+    int matched = __sc_route_request(server, req, res);
+
+    // get response as string
+    char *response;
+    response = sc_get_res_as_text(res);
+
+    // send response to client
+    send(client_socket, response, strlen(response), 0);
+
+    // free memory and close connection
+    free(response);
+    sc_free_request(req);
+    sc_free_response(res);
+    close(client_socket);
 }
 
 
