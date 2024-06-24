@@ -16,46 +16,55 @@ typedef void (*Sc_Route_Handler)(Sc_Request*, Sc_Response*);
 
 
 typedef struct {
-    Sc_Method method;
-    char *uri;
-    Sc_Route_Handler handler;
+    Sc_Method method; // HTTP Method
+    char *uri; // HTTP URI
+    Sc_Route_Handler handler; // callback function handles request
 } Sc_Route;
 
 
 typedef struct {
-    int socket;
-    int bind;
-    char *host;
-    int port;
-    Sc_Route *routes;
-    size_t route_count;
+    int socket; // the server socket 
+    int bind; // is socket binded
+    char *host; // server host eg. "127.0.0.1"
+    int port; // server port eg. 8080
+    Sc_Route *routes; // array of routes that server handles
+    size_t route_count; // route count
 } Sc_Server;
 
 
+// create socket server
 Sc_Server *sc_server();
 
 
+// listen and accept connections. this function has to run at the end of the file
 void sc_listen(Sc_Server *server, const char *host, int port);
 
 
+// handle selected request. do not run directly, runs in sc_listen()
 void __sc_handle_request(Sc_Server *server, int client_socket);
 
 
+// route handled requestç do not run directly, runs in __sc_handle_request()
 int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res);
 
 
+// add get rule to server on the uri
 void sc_get(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 
+// add post rule to server on the uri
 void sc_post(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 
+// add put rule to server on the uri
 void sc_put(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 
+// add delete rule to server on the uri
 void sc_delete(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 
+// add rule for all methods to server on the uri
 void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 
