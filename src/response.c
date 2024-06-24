@@ -110,6 +110,51 @@ void sc_append_body(Sc_Response *res, char *data) {
 }
 
 
+void sc_set_body_file(Sc_Response *res, char *filename) {
+
+    // get absolute path of file
+    char *abs_path = realpath(filename, NULL);
+
+    // get file
+    FILE *f = fopen(abs_path, "rb");
+
+    if (f == NULL) {
+        perror("Cannot open file");
+        return;
+    }
+    
+    // get length of file
+    fseek(f, 0, SEEK_END);
+    long f_size = ftell(f);
+    rewind(f);
+
+    // malloc memory for file content
+    char *buff = (char *) malloc((f_size+1)*sizeof(char));
+    if (buff == NULL) {
+        perror("Cannot malloc memory");
+        fclose(f);
+        return;
+    }
+
+    // read file
+    size_t buff_read = fread(buff, 1, f_size, f);
+    if (f_size != buff_read) {
+        perror("Cannot read file");
+        free(buff);
+        fclose(f);
+        return;
+    }
+
+    buff[f_size] = '\0';
+    fclose(f);
+
+    res->body = strdup(buff);
+
+    free(abs_path);
+    free(buff);
+}
+
+
 void sc_free_response(Sc_Response *res) {
 
     for (int i = 0; i < res->header_count; ++i) {

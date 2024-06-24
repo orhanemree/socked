@@ -39,6 +39,10 @@ void sc_set_body(Sc_Response *res, char *data);
 void sc_append_body(Sc_Response *res, char *data);
 
 
+// set file content as body of response
+void sc_set_body_file(Sc_Response *res, char *filename);
+
+
 // free response memory
 void sc_free_response(Sc_Response *res);
 
