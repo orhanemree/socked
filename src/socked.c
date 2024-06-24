@@ -23,6 +23,8 @@ Sc_Server *sc_server() {
     server->socket = soc;    
     server->bind = 0;
     server->route_count = 0;
+    server->static_uri = strdup("");
+    server->static_folder = strdup("");
 
     // reuse address
     int opt = 1;
@@ -139,8 +141,46 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     res->status_message = strdup("Ok"); 
     res->body = strdup("");
 
-    // route if matched rule exists else return default response
-    int matched = __sc_route_request(server, req, res);
+    // check if uri is served as static
+    if (strlen(server->static_uri) != 0 && strlen(server->static_folder) != 0) {
+        // static served folder exists
+
+        if (strncmp(req->uri, server->static_uri, strlen(server->static_uri)) == 0) {
+            // matched
+
+            // find abs path of static file
+            size_t abs_path_len = strlen(req->uri)-strlen(server->static_uri)+strlen(server->static_folder);
+
+            char *abs_path = (char *) malloc((abs_path_len+1)*sizeof(char));
+            abs_path[0] = '\0';
+
+            strcat(abs_path, server->static_folder);
+            strcat(abs_path, req->uri+strlen(server->static_uri));
+
+            abs_path[abs_path_len] = '\0';
+
+            // change body directly
+            // static routes does not have handler function
+            int success = sc_set_body_file(res, abs_path);
+
+            if (!success) {
+                // file not found or something went wrong while reading the file
+                res->status_code = 404;
+                res->status_message = strdup("Not Found"); 
+                res->body = strdup("404 Not Found");
+            }
+
+            free(abs_path);
+        }
+
+
+    } else {
+        // static served folder does not exist
+        // try match with rules
+
+        // route if matched rule exists else return default response
+        int matched = __sc_route_request(server, req, res);
+    }
 
     // get response as string
     char *response;
@@ -162,6 +202,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
     int route_matched = 0;
     int method_matched = 0;
 
+    // try for each rule
     for (int i = 0; i < server->route_count; ++i) {
         
         // match route
@@ -302,4 +343,15 @@ void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
     server->routes[server->route_count].handler = handler;
 
     server->route_count++;
+}
+
+
+void sc_static(Sc_Server *server, char *uri, char *folder) {
+
+    char *abs_path = realpath(folder, NULL);
+
+    server->static_uri = strdup(uri);
+    server->static_folder = strdup(abs_path);
+
+    free(abs_path);
 }

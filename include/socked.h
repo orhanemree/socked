@@ -29,6 +29,8 @@ typedef struct {
     int port; // server port eg. 8080
     Sc_Route *routes; // array of routes that server handles
     size_t route_count; // route count
+    char *static_uri; // static URI
+    char *static_folder; // static served folder
 } Sc_Server;
 
 
@@ -66,6 +68,10 @@ void sc_delete(Sc_Server *server, char *uri, Sc_Route_Handler handler);
 
 // add rule for all methods to server on the uri
 void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+
+
+// serve specified folder on the uri staticly
+void sc_static(Sc_Server *server, char *uri, char *folder);
 
 
 #endif // SC_SOCKED_H

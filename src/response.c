@@ -110,7 +110,7 @@ void sc_append_body(Sc_Response *res, char *data) {
 }
 
 
-void sc_set_body_file(Sc_Response *res, char *filename) {
+int sc_set_body_file(Sc_Response *res, char *filename) {
 
     // get absolute path of file
     char *abs_path = realpath(filename, NULL);
@@ -120,7 +120,7 @@ void sc_set_body_file(Sc_Response *res, char *filename) {
 
     if (f == NULL) {
         perror("Cannot open file");
-        return;
+        return 0;
     }
     
     // get length of file
@@ -133,7 +133,7 @@ void sc_set_body_file(Sc_Response *res, char *filename) {
     if (buff == NULL) {
         perror("Cannot malloc memory");
         fclose(f);
-        return;
+        return 0;
     }
 
     // read file
@@ -142,7 +142,7 @@ void sc_set_body_file(Sc_Response *res, char *filename) {
         perror("Cannot read file");
         free(buff);
         fclose(f);
-        return;
+        return 0;
     }
 
     buff[f_size] = '\0';
@@ -152,6 +152,8 @@ void sc_set_body_file(Sc_Response *res, char *filename) {
 
     free(abs_path);
     free(buff);
+
+    return 1;
 }
 
 

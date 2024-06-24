@@ -17,6 +17,7 @@
         "tuple": "c",
         "type_traits": "c",
         "utility": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "inet.h": "c"
     }
 }
