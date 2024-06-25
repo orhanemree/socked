@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 #include "../include/socked.h"
 
@@ -141,47 +142,26 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     res->status_message = strdup("Ok"); 
     res->body = strdup("");
 
-    // check if uri is served as static
+    int static_success = 0;
+
+    // check if static served folder exists
     if (strlen(server->static_uri) != 0 && strlen(server->static_folder) != 0) {
-        // static served folder exists
 
+        // check if the uri served as static
         if (strncmp(req->uri, server->static_uri, strlen(server->static_uri)) == 0) {
-            // matched
-
-            // find abs path of static file
-            size_t abs_path_len = strlen(req->uri)-strlen(server->static_uri)+strlen(server->static_folder);
-
-            char *abs_path = (char *) malloc((abs_path_len+1)*sizeof(char));
-            abs_path[0] = '\0';
-
-            strcat(abs_path, server->static_folder);
-            strcat(abs_path, req->uri+strlen(server->static_uri));
-
-            abs_path[abs_path_len] = '\0';
-
-            // change body directly
-            // static routes does not have handler function
-            int success = sc_set_body_file(res, abs_path);
-
-            if (!success) {
-                // file not found or something went wrong while reading the file
-                res->status_code = 404;
-                res->status_message = strdup("Not Found"); 
-                res->body = strdup("404 Not Found");
-            }
-
-            free(abs_path);
+            static_success = __sc_handle_static(server, req, res);
         }
 
-
-    } else {
+    } 
+    
+    if (!static_success) {
         // static served folder does not exist
         // try match with rules
 
         // route if matched rule exists else return default response
         int matched = __sc_route_request(server, req, res);
     }
-
+    
     // get response as string
     char *response;
     response = sc_get_res_as_text(res);
@@ -194,6 +174,92 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     sc_free_request(req);
     sc_free_response(res);
     close(client_socket);
+}
+
+
+int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
+
+    // static paths only handles GET 
+    if (req->method != SC_GET) {
+        
+        // another method instead of GET on static path
+        // return 405
+
+        res->status_code = 405;
+        res->status_message = strdup("Method Not Allowed"); 
+        res->body = strdup("405 Method Not Allowed");
+
+        return 0;
+    }
+
+    int is_uri_root = strcmp(server->static_uri, "/") == 0;
+
+    // find abs path of static file
+    size_t abs_path_len = strlen(req->uri)-strlen(server->static_uri)
+        +strlen(server->static_folder) + is_uri_root;
+
+    char *abs_path = (char *) malloc((abs_path_len+1)*sizeof(char));
+    abs_path[0] = '\0';
+
+    strcat(abs_path, server->static_folder);
+
+    if (is_uri_root) {
+        strcat(abs_path, "/");
+    }
+
+    strcat(abs_path, req->uri+strlen(server->static_uri));
+
+    abs_path[abs_path_len] = '\0';
+
+    // check if path is directory. if so return index.html if exists in the directory
+    struct stat path_stat;
+    stat(abs_path, &path_stat);
+    int is_path_dir = S_ISDIR(path_stat.st_mode);
+
+    if (is_path_dir) {
+
+        if (req->uri[strlen(req->uri)-1] == '/') {
+            // retunr index.html
+            char *new_abs_path = (char *) realloc(abs_path,
+                (abs_path_len+strlen("/index.html")+1)*sizeof(char));
+
+            abs_path = new_abs_path;
+
+            strcat(abs_path, "/index.html");
+
+        } else {
+            // redirect to return index.html with correct relative path
+            res->status_code = 301;
+            res->status_message = strdup("Moved Permanently"); 
+            res->body = strdup("");
+
+            char *redirect_path = (char *) malloc(strlen((req->uri)+2)*sizeof(char));
+            strcat(redirect_path, req->uri);
+            strcat(redirect_path, "/");
+
+            sc_set_header(res, "Location", redirect_path);
+
+            free(redirect_path);
+            return 1;
+        }
+    }
+
+    // change body directly
+    // static routes does not have handler function
+    int success = sc_set_body_file(res, abs_path);
+
+    if (!success) {
+        // file not found or something went wrong while reading the file
+        res->status_code = 404;
+        res->status_message = strdup("Not Found"); 
+        res->body = strdup("404 Not Found");
+
+        return 0;
+    }
+
+    free(abs_path);
+
+    return 1;
 }
 
 

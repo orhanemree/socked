@@ -46,7 +46,12 @@ void sc_listen(Sc_Server *server, const char *host, int port);
 void __sc_handle_request(Sc_Server *server, int client_socket);
 
 
-// route handled requestç do not run directly, runs in __sc_handle_request()
+
+// handle static served path return success state do not run directly, runs in __sc_handle_request()
+int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res);
+
+
+// route handled request return success state do not run directly, runs in __sc_handle_request()
 int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res);
 
 
