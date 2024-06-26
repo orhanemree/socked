@@ -56,27 +56,27 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res);
 
 
 // add get rule to server on the uri
-void sc_get(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler);
 
 
 // add post rule to server on the uri
-void sc_post(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+void sc_post(Sc_Server *server, const char *uri, Sc_Route_Handler handler);
 
 
 // add put rule to server on the uri
-void sc_put(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+void sc_put(Sc_Server *server, const char *uri, Sc_Route_Handler handler);
 
 
 // add delete rule to server on the uri
-void sc_delete(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+void sc_delete(Sc_Server *server, const char *uri, Sc_Route_Handler handler);
 
 
 // add rule for all methods to server on the uri
-void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler);
+void sc_route(Sc_Server *server, const char *uri, Sc_Route_Handler handler);
 
 
 // serve specified folder on the uri staticly
-void sc_static(Sc_Server *server, char *uri, char *folder);
+void sc_static(Sc_Server *server, const char *uri, const char *folder);
 
 
 #endif // SC_SOCKED_H

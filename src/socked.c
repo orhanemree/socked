@@ -309,7 +309,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 }
 
 
-void sc_get(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
     memset(route, 0, sizeof(Sc_Route));
@@ -329,7 +329,7 @@ void sc_get(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
 }
 
 
-void sc_post(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+void sc_post(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
     memset(route, 0, sizeof(Sc_Route));
@@ -349,7 +349,7 @@ void sc_post(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
 }
 
 
-void sc_put(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+void sc_put(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
     memset(route, 0, sizeof(Sc_Route));
@@ -369,7 +369,7 @@ void sc_put(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
 }
 
 
-void sc_delete(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+void sc_delete(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
     memset(route, 0, sizeof(Sc_Route));
@@ -389,7 +389,7 @@ void sc_delete(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
 }
 
 
-void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
+void sc_route(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
     memset(route, 0, sizeof(Sc_Route));
@@ -409,7 +409,7 @@ void sc_route(Sc_Server *server, char *uri, Sc_Route_Handler handler) {
 }
 
 
-void sc_static(Sc_Server *server, char *uri, char *folder) {
+void sc_static(Sc_Server *server, const char *uri, const char *folder) {
 
     char *abs_path = realpath(folder, NULL);
 

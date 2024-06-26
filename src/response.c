@@ -63,7 +63,7 @@ char *sc_get_res_as_text(Sc_Response *res) {
 }
 
 
-void sc_set_status(Sc_Response *res, int status_code, char *status_message){
+void sc_set_status(Sc_Response *res, int status_code, const char *status_message){
 
     res->status_code = status_code;
     res->status_message = strdup(status_message);
@@ -71,7 +71,7 @@ void sc_set_status(Sc_Response *res, int status_code, char *status_message){
 }
 
 
-void sc_set_header(Sc_Response *res, char *header_name, char *header_value) {
+void sc_set_header(Sc_Response *res, const char *header_name, const char *header_value) {
 
     res->headers = (Sc_Header *) realloc(res->headers,
         (res->header_count+1)*sizeof(Sc_Header));
@@ -88,7 +88,7 @@ void sc_set_header(Sc_Response *res, char *header_name, char *header_value) {
 }
 
 
-void sc_set_body(Sc_Response *res, char *data) {
+void sc_set_body(Sc_Response *res, const char *data) {
 
     if (res->body) {
         free(res->body);
@@ -111,7 +111,7 @@ void sc_set_body(Sc_Response *res, char *data) {
 }
 
 
-void sc_append_body(Sc_Response *res, char *data) {
+void sc_append_body(Sc_Response *res, const char *data) {
 
     // TODO: make it compatible with binary
 
@@ -131,7 +131,7 @@ void sc_append_body(Sc_Response *res, char *data) {
 }
 
 
-int sc_set_body_file(Sc_Response *res, char *filename) {
+int sc_set_body_file(Sc_Response *res, const char *filename) {
 
     // get absolute path of file
     char *abs_path = realpath(filename, NULL);
