@@ -29,7 +29,16 @@ char *sc_get_res_as_text(Sc_Response *res);
 void sc_set_status(Sc_Response *res, int status_code, const char *status_message);
 
 
-// add header to Response object
+// check if Response object has header specified by name
+int sc_res_has_header(Sc_Response *res, const char *header_name);
+
+
+// get copy of header value from Response object if exists, else return NULL
+// run free() after you used the value
+char *sc_res_get_header(Sc_Response *res, const char *header_name);
+
+
+// add header to Response object or update existing
 void sc_set_header(Sc_Response *res, const char *header_name, const char *header_value);
 
 

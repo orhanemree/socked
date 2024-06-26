@@ -71,7 +71,45 @@ void sc_set_status(Sc_Response *res, int status_code, const char *status_message
 }
 
 
+int sc_res_has_header(Sc_Response *res, const char *header_name) {
+
+    for (int i = 0; i < res->header_count; ++i) {
+        if (strcmp(res->headers[i].name, header_name) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+char *sc_res_get_header(Sc_Response *res, const char *header_name) {
+
+    for (int i = 0; i < res->header_count; ++i) {
+        if (strcmp(res->headers[i].name, header_name) == 0) {
+            // return copy of original value
+            return strdup(res->headers[i].value);
+        }
+    }
+
+    return NULL;
+}
+
+
 void sc_set_header(Sc_Response *res, const char *header_name, const char *header_value) {
+
+    // create if not exists else update existing
+
+    for (int i = 0; i < res->header_count; ++i) {
+        if (strcmp(res->headers[i].name, header_name) == 0) {
+            // update existing
+            free(res->headers[i].value);
+            res->headers[i].value = strdup(header_value);
+            return;
+        }
+    }
+
+    // create new
 
     res->headers = (Sc_Header *) realloc(res->headers,
         (res->header_count+1)*sizeof(Sc_Header));
