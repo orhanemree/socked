@@ -40,7 +40,7 @@ Sc_Request *sc_parse_http_request(char *request);
 int __sc_add_header(Sc_Request *req, const char *header_name, const char *header_value);
 
 
-// check if Request header has header specified by name
+// check if Request object has header specified by name
 int sc_req_has_header(Sc_Request *req, const char *header_name);
 
 
