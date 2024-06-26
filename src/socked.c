@@ -81,7 +81,6 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
 
         if (s < 0) {
             perror("Select error");
-            exit(EXIT_FAILURE);
         }
 
         for (int i = 0; i < max_sockets_so_far+1; ++i) {
@@ -133,14 +132,15 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     Sc_Response *res = (Sc_Response *) malloc(sizeof(Sc_Response));
     memset(res, 0, sizeof(Sc_Response));
     res->header_count = 0;
+    res->body_len = 0;
+    res->total_len = 0;
 
     strcpy(res->version, SC_HTTP_VERSION); // by default
 
     // route found, method matched but status code and body didnt specified yet
     // return 200 OK and empty body by default
-    res->status_code = 200;
-    res->status_message = strdup("Ok"); 
-    res->body = strdup("");
+    sc_set_status(res, 200, "Ok");
+    sc_set_body(res, "");
 
     int static_success = 0;
 
@@ -167,7 +167,7 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     response = sc_get_res_as_text(res);
 
     // send response to client
-    send(client_socket, response, strlen(response), 0);
+    int s_ = send(client_socket, response, res->total_len, 0);
 
     // free memory and close connection
     free(response);
@@ -185,9 +185,8 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
         // another method instead of GET on static path
         // return 405
 
-        res->status_code = 405;
-        res->status_message = strdup("Method Not Allowed"); 
-        res->body = strdup("405 Method Not Allowed");
+        sc_set_status(res, 405, "Method Not Allowed");
+        sc_set_body(res, "405 Method Not Allowed");
 
         return 0;
     }
@@ -229,9 +228,8 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
         } else {
             // redirect to return index.html with correct relative path
-            res->status_code = 301;
-            res->status_message = strdup("Moved Permanently"); 
-            res->body = strdup("");
+            sc_set_status(res, 301, "Moved Permanently");
+            sc_set_body(res, "");
 
             char *redirect_path = (char *) malloc(strlen((req->uri)+2)*sizeof(char));
             strcat(redirect_path, req->uri);
@@ -250,9 +248,8 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
     if (!success) {
         // file not found or something went wrong while reading the file
-        res->status_code = 404;
-        res->status_message = strdup("Not Found"); 
-        res->body = strdup("404 Not Found");
+        sc_set_status(res, 404, "Not Found");
+        sc_set_body(res, "404 Not Found");
 
         return 0;
     }
@@ -280,6 +277,9 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
             if (server->routes[i].method == SC_ALL ||
                 server->routes[i].method == req->method) {
 
+                sc_set_status(res, 200, "Ok"); // by default
+                sc_set_body(res, "");
+
                 // route and method matched, run callback
                 server->routes[i].handler(req, res);
                 method_matched = 1;
@@ -293,20 +293,18 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
         // route found, method is not allowed
         // return 405
-        
-        res->status_code = 405;
-        res->status_message = strdup("Method Not Allowed"); 
-        res->body = strdup("405 Method Not Allowed");
+
+        sc_set_status(res, 405, "Method Not Allowed");
+        sc_set_body(res, "405 Method Not Allowed");
 
         return 0;
     }
 
     // route not found
     // return 404
-
-    res->status_code = 404;
-    res->status_message = strdup("Not Found"); 
-    res->body = strdup("404 Not Found");
+    
+    sc_set_status(res, 404, "Not Found");
+    sc_set_body(res, "404 Not Found");
 
     return 0;
 }

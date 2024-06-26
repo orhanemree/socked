@@ -12,6 +12,8 @@ typedef struct {
     Sc_Header *headers; // Array of Headers
     size_t header_count; // Headers count
     char *body; // Response Body
+    size_t body_len; // Length of response body
+    size_t total_len; // Length of response
 } Sc_Response;
 
 
@@ -31,16 +33,20 @@ void sc_set_status(Sc_Response *res, int status_code, char *status_message);
 void sc_set_header(Sc_Response *res, char *header_name, char *header_value);
 
 
-// set body of response
+// set string body of response 
 void sc_set_body(Sc_Response *res, char *data);
 
 
-// add data to end of existing response body
+// add string data to end of existing response body
 void sc_append_body(Sc_Response *res, char *data);
 
 
 // set file content as body of response return success status
 int sc_set_body_file(Sc_Response *res, char *filename);
+
+
+// get mime type of file
+const char *sc_get_mime_type(const char *path);
 
 
 // free response memory
