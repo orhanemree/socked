@@ -140,7 +140,7 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     // route found, method matched but status code and body didnt specified yet
     // return 200 OK and empty body by default
     sc_set_status(res, 200, "Ok");
-    sc_set_body(res, "");
+    sc_set_body(res, " ");
 
     int static_success = 0;
 
@@ -278,7 +278,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
                 server->routes[i].method == req->method) {
 
                 sc_set_status(res, 200, "Ok"); // by default
-                sc_set_body(res, "");
+                sc_set_body(res, " ");
 
                 // route and method matched, run callback
                 server->routes[i].handler(req, res);

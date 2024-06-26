@@ -55,7 +55,9 @@ char *sc_get_res_as_text(Sc_Response *res) {
         res->version, res->status_code,
         res->status_message, headers_as_text);
 
-    memcpy(response+len-res->body_len, res->body, res->body_len);
+    if (res->body_len != 0) {
+        memcpy(response+len-res->body_len, res->body, res->body_len);
+    }
 
     return response;
 }
