@@ -126,7 +126,6 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     recv(client_socket, request, SC_MAX_REQ, 0);
     printf("==Request==\n%s====\n", request);
     Sc_Request *req = sc_parse_http_request(request);
-    req->header_count = 0;
 
     // prepare response
     Sc_Response *res = (Sc_Response *) malloc(sizeof(Sc_Response));

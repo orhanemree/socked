@@ -47,6 +47,8 @@ Sc_Request *sc_parse_http_request(char *request) {
     body_p += 4;
 
     // parse headers
+    req->header_count = 0;
+
     char *p1, *p2;
     char *header = strtok_r(headers, SC_CRLF, &p1);
     char *name, *value;
@@ -95,6 +97,31 @@ int __sc_add_header(Sc_Request *req, const char *header_name, const char *header
     req->header_count++;
 
     return 0;
+}
+
+
+int sc_req_has_header(Sc_Request *req, const char *header_name) {
+
+    for (int i = 0; i < req->header_count; ++i) {
+        if (strcmp(req->headers[i].name, header_name) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+char *sc_req_get_header(Sc_Request *req, const char *header_name) {
+
+    for (int i = 0; i < req->header_count; ++i) {
+        if (strcmp(req->headers[i].name, header_name) == 0) {
+            // return copy of original value
+            return strdup(req->headers[i].value);
+        }
+    }
+
+    return NULL;
 }
 
 

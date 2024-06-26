@@ -40,8 +40,13 @@ Sc_Request *sc_parse_http_request(char *request);
 int __sc_add_header(Sc_Request *req, const char *header_name, const char *header_value);
 
 
-// TODO: add sc_has_header()
-// TODO: add sc_get_header()
+// check if Request header has header specified by name
+int sc_req_has_header(Sc_Request *req, const char *header_name);
+
+
+// get copy of header value from Request object if exists, else return NULL
+// run free() after you used the value
+char *sc_req_get_header(Sc_Request *req, const char *header_name);
 
 
 // free Request object
