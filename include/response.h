@@ -29,19 +29,19 @@ char *sc_get_res_as_text(Sc_Response *res);
 void sc_set_status(Sc_Response *res, int status_code, const char *status_message);
 
 
-// add header to response
+// add header to Response object
 void sc_set_header(Sc_Response *res, const char *header_name, const char *header_value);
 
 
-// set string body of response 
+// clean Response body and set string data
 void sc_set_body(Sc_Response *res, const char *data);
 
 
-// add string data to end of existing response body
+// append string data to existing Response body
 void sc_append_body(Sc_Response *res, const char *data);
 
 
-// set file content as body of response return success status
+// clean Response body and set file data both text and binary
 int sc_set_body_file(Sc_Response *res, const char *filename);
 
 

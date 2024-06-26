@@ -90,6 +90,8 @@ void sc_set_header(Sc_Response *res, const char *header_name, const char *header
 
 void sc_set_body(Sc_Response *res, const char *data) {
 
+    if (data == NULL) return;
+
     if (res->body) {
         free(res->body);
     }
@@ -103,35 +105,39 @@ void sc_set_body(Sc_Response *res, const char *data) {
     if (res->body) {
         memcpy(res->body, data, len);
         res->body_len = len;
-
-    } else {
-        printf("HEEELLLLPPPP MEEE\n");
     }
-
 }
 
 
 void sc_append_body(Sc_Response *res, const char *data) {
 
-    // TODO: make it compatible with binary
+    if (data == NULL) return;
 
-    size_t prev_len = strlen(res->body);
-    size_t new_len = prev_len+strlen(data);
+    // append body as binary to make it compatible with binary files
 
-    char *new_body = (char *) realloc(res->body, (new_len+1)*sizeof(char));
+    size_t prev_len = res->body_len;
+    size_t data_len = strlen(data);
+    size_t new_len = prev_len+data_len;
+
+    char *new_body = (char *) realloc(res->body, new_len*sizeof(char));
 
     if (new_body == NULL) {
         printf("Cannot realloc memory.");
         return;
     }
 
-    strcat(new_body, data);
+    memcpy(new_body+prev_len, data, data_len);
+
     res->body = new_body;
-    res->body_len = strlen(new_body);
+    res->body_len = new_len;
 }
 
 
 int sc_set_body_file(Sc_Response *res, const char *filename) {
+
+    if (res->body) {
+        free(res->body);
+    }
 
     // get absolute path of file
     char *abs_path = realpath(filename, NULL);
