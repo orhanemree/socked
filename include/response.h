@@ -14,6 +14,7 @@ typedef struct {
     char *body; // Response Body
     size_t body_len; // Length of response body
     size_t total_len; // Length of response
+    int is_body_set; // is sc_set_body() runned at least once
 } Sc_Response;
 
 

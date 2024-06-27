@@ -143,11 +143,17 @@ void sc_set_body(Sc_Response *res, const char *data) {
     if (res->body) {
         memcpy(res->body, data, len);
         res->body_len = len;
+        res->is_body_set = 1;
     }
 }
 
 
 void sc_append_body(Sc_Response *res, const char *data) {
+
+    if (!(res->is_body_set)) {
+        sc_set_body(res, data);
+        return;
+    }
 
     if (data == NULL) return;
 

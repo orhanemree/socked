@@ -140,6 +140,7 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     // return 200 OK and empty body by default
     sc_set_status(res, 200, "Ok");
     sc_set_body(res, " ");
+    res->is_body_set = 0;
 
     int static_success = 0;
 
@@ -186,6 +187,7 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
         sc_set_status(res, 405, "Method Not Allowed");
         sc_set_body(res, "405 Method Not Allowed");
+        res->is_body_set = 0;
 
         return 0;
     }
@@ -229,6 +231,7 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
             // redirect to return index.html with correct relative path
             sc_set_status(res, 301, "Moved Permanently");
             sc_set_body(res, "");
+            res->is_body_set = 0;
 
             char *redirect_path = (char *) malloc(strlen((req->uri)+2)*sizeof(char));
             strcat(redirect_path, req->uri);
@@ -249,6 +252,7 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
         // file not found or something went wrong while reading the file
         sc_set_status(res, 404, "Not Found");
         sc_set_body(res, "404 Not Found");
+        res->is_body_set = 0;
 
         return 0;
     }
@@ -278,6 +282,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
                 sc_set_status(res, 200, "Ok"); // by default
                 sc_set_body(res, " ");
+                res->is_body_set = 0;
 
                 // route and method matched, run callback
                 server->routes[i].handler(req, res);
@@ -295,6 +300,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
         sc_set_status(res, 405, "Method Not Allowed");
         sc_set_body(res, "405 Method Not Allowed");
+        res->is_body_set = 0;
 
         return 0;
     }
@@ -304,6 +310,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
     
     sc_set_status(res, 404, "Not Found");
     sc_set_body(res, "404 Not Found");
+    res->is_body_set = 0;
 
     return 0;
 }
