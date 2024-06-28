@@ -1,9 +1,8 @@
-#include "../../include/socked.h"
+#include "../include/socked.h"
 
 
 /*
-    The app responds with "Hello, World!" for requests to the URL "/"
-    For every other path, it wil respond with a 404 Not Found  
+    The app responds with a JSON object for requests to the URL "/"
 */
 
 
@@ -13,8 +12,12 @@
 // request handler
 void handle_index(Sc_Request *req, Sc_Response *res) {
 
-    // send hello world response
-    sc_set_body(res, "Hello, World!");
+    // send json object
+    sc_set_body(res, "{\"message\": \"Hello, this a json message!\"}");
+
+    // set content type header
+    sc_set_header(res, "Content-Type", "application/json");
+
     // status set 200 Ok by default
 } 
 
@@ -26,6 +29,6 @@ int main() {
     // register GET request handler on URL "/"
     sc_get(server, "/", handle_index);
 
-    // start server and listen requests
+    // start server and listen to requests
     sc_listen(server, HOST, PORT);
 }
