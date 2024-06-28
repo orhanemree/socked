@@ -10,6 +10,7 @@
 #define HOST "127.0.0.1" // localhost
 #define PORT 8080
 
+
 // request handler
 void handle_index(Sc_Request *req, Sc_Response *res) {
 
