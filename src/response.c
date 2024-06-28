@@ -23,6 +23,7 @@ char *__sc_get_headers_as_text(Sc_Header *headers, size_t header_count) {
     }
 
     char *text = (char *) malloc((text_len+1)*sizeof(char));
+    if (text == NULL) return NULL;
     text[0] = '\0';
 
     for (int i = 0; i < header_count; ++i) {
@@ -42,6 +43,7 @@ char *sc_get_res_as_text(Sc_Response *res) {
 
     // get headers as text
     char *headers_as_text = __sc_get_headers_as_text(res->headers, res->header_count);
+    if (headers_as_text == NULL) return NULL;
 
     size_t len = 13;
     len += strlen(res->status_message) + 2; // +2 for CRLF
@@ -51,6 +53,7 @@ char *sc_get_res_as_text(Sc_Response *res) {
     res->total_len = len;
     
     char *response = (char *) malloc(len*sizeof(char));
+    if (response == NULL) return NULL;
     snprintf(response, len, "%s %d %s\r\n%s\r\n",
         res->version, res->status_code,
         res->status_message, headers_as_text);

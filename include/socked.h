@@ -43,8 +43,7 @@ void sc_listen(Sc_Server *server, const char *host, int port);
 
 
 // handle selected request. do not run directly, runs in sc_listen()
-void __sc_handle_request(Sc_Server *server, int client_socket);
-
+int __sc_handle_request(Sc_Server *server, int client_socket);
 
 
 // handle static served path return success state do not run directly, runs in __sc_handle_request()
@@ -77,6 +76,10 @@ void sc_route(Sc_Server *server, const char *uri, Sc_Route_Handler handler);
 
 // serve specified folder on the uri staticly
 void sc_static(Sc_Server *server, const char *uri, const char *folder);
+
+
+// free server memory
+void sc_free_server(Sc_Server *server);
 
 
 #endif // SC_SOCKED_H

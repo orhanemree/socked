@@ -16,20 +16,36 @@
 Sc_Server *sc_server() {
 
     Sc_Server *server = (Sc_Server *) malloc(sizeof(Sc_Server));
+
+    if (server == NULL) {
+        perror("Server malloc failed");
+        exit(EXIT_FAILURE);
+    }
+
     memset(server, 0, sizeof(Sc_Server));
 
-    // TODO: add error handle
-
-    int soc = socket(AF_INET, SOCK_STREAM, 0);
-    server->socket = soc;    
     server->bind = 0;
     server->route_count = 0;
     server->static_uri = strdup("");
     server->static_folder = strdup("");
 
+    int soc = socket(AF_INET, SOCK_STREAM, 0);
+    
+    if (soc < 0) {
+        perror("Socket create failed");
+        sc_free_server(server);
+        exit(EXIT_FAILURE);
+    }
+
+    server->socket = soc;
+
     // reuse address
     int opt = 1;
-    setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt);
+    if (setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt) < 0) {
+        perror("Setsockopt failed");
+        sc_free_server(server);
+        exit(EXIT_FAILURE);
+    }
 
     return server;
 }
@@ -39,21 +55,26 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
 
     int soc = server->socket;
 
-    // TODO: add error handle
-
     // bind
     struct sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
     inet_aton(host, &address.sin_addr);
-    int addrlen = sizeof address;
 
-    bind(soc, (struct sockaddr *)&address, sizeof address);
+    if (bind(soc, (struct sockaddr *)&address, sizeof address) < 0) {
+        perror("Bind failed");
+        sc_free_server(server);
+        exit(EXIT_FAILURE);
+    } 
 
     server->bind = 1;
 
     // listen
-    listen(soc, 0);
+    if (listen(soc, 0) < 0) {
+        perror("Listen failed");
+        sc_free_server(server);
+        exit(EXIT_FAILURE);
+    }
 
     server->host = strdup(host);
     server->port = port;
@@ -80,7 +101,9 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
         int s = select(max_sockets_so_far+1, &readable_sockets, NULL, NULL, NULL);
 
         if (s < 0) {
-            perror("Select error");
+            perror("Select failed");
+            sc_free_server(server);
+            exit(EXIT_FAILURE);
         }
 
         for (int i = 0; i < max_sockets_so_far+1; ++i) {
@@ -106,7 +129,12 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
                 } else {
 
                     // handle existing connection recv request
-                    __sc_handle_request(server, i);
+                    int success = __sc_handle_request(server, i);
+                    if (success < 0) {
+                        perror("Somenthing went wrong");
+                        // TODO: handle each error seperately
+                        // TODO: exit if necessary
+                    }
                     FD_CLR(i, &current_sockets);
                 }
             }
@@ -117,7 +145,7 @@ void sc_listen(Sc_Server *server, const char *host, int port) {
 }
 
 
-void __sc_handle_request(Sc_Server *server, int client_socket) {
+int __sc_handle_request(Sc_Server *server, int client_socket) {
 
     // read request and parse to Sc_Request object
 
@@ -126,10 +154,13 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
     recv(client_socket, request, SC_MAX_REQ, 0);
     printf("==Request==\n%s====\n", request);
     Sc_Request *req = sc_parse_http_request(request);
+    if (req == NULL) return -1;
 
     // prepare response
     Sc_Response *res = (Sc_Response *) malloc(sizeof(Sc_Response));
+    if (res == NULL) return -1;
     memset(res, 0, sizeof(Sc_Response));
+
     res->header_count = 0;
     res->body_len = 0;
     res->total_len = 0;
@@ -138,7 +169,7 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
 
     // route found, method matched but status code and body didnt specified yet
     // return 200 OK and empty body by default
-    sc_set_status(res, 200, "Ok");
+    sc_set_status(res, 200, "OK");
     sc_set_body(res, " ");
     res->is_body_set = 0;
 
@@ -150,6 +181,7 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
         // check if the uri served as static
         if (strncmp(req->uri, server->static_uri, strlen(server->static_uri)) == 0) {
             static_success = __sc_handle_static(server, req, res);
+            if (static_success < 0) return -1;
         }
 
     } 
@@ -159,15 +191,24 @@ void __sc_handle_request(Sc_Server *server, int client_socket) {
         // try match with rules
 
         // route if matched rule exists else return default response
-        int matched = __sc_route_request(server, req, res);
+        int route_success = __sc_route_request(server, req, res);
+        if (route_success < 0) return -1;
     }
     
     // get response as string
-    char *response;
-    response = sc_get_res_as_text(res);
+    char *response = sc_get_res_as_text(res);
+    if (response == NULL) return -1;
 
     // send response to client
     int s_ = send(client_socket, response, res->total_len, 0);
+
+    if (s_ < 0) {
+        // TODO: dont exit just log
+    }
+
+    if (s_ != res->total_len) {
+        // TODO: dont exit just log
+    } 
 
     // free memory and close connection
     free(response);
@@ -199,6 +240,7 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
         +strlen(server->static_folder) + is_uri_root;
 
     char *abs_path = (char *) malloc((abs_path_len+1)*sizeof(char));
+    if (abs_path == NULL) return -1;
     abs_path[0] = '\0';
 
     strcat(abs_path, server->static_folder);
@@ -222,6 +264,7 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
             // retunr index.html
             char *new_abs_path = (char *) realloc(abs_path,
                 (abs_path_len+strlen("/index.html")+1)*sizeof(char));
+            if (new_abs_path == NULL) return -1;
 
             abs_path = new_abs_path;
 
@@ -234,6 +277,7 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
             res->is_body_set = 0;
 
             char *redirect_path = (char *) malloc(strlen((req->uri)+2)*sizeof(char));
+            if (redirect_path == NULL) return -1;
             strcat(redirect_path, req->uri);
             strcat(redirect_path, "/");
 
@@ -280,7 +324,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
             if (server->routes[i].method == SC_ALL ||
                 server->routes[i].method == req->method) {
 
-                sc_set_status(res, 200, "Ok"); // by default
+                sc_set_status(res, 200, "OK"); // by default
                 sc_set_body(res, " ");
                 res->is_body_set = 0;
 
@@ -319,13 +363,17 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    if (route == NULL) {
+        perror("Route malloc failed");
+        exit(EXIT_FAILURE);
+    }
     memset(route, 0, sizeof(Sc_Route));
 
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
-
     if (server->routes == NULL) {
-        printf("Cannot realloc memory.\n");
+        perror("Routes realloc failed");
+        exit(EXIT_FAILURE);
     }
 
     server->routes[server->route_count].method = SC_GET;
@@ -339,13 +387,17 @@ void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 void sc_post(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    if (route == NULL) {
+        perror("Route malloc failed");
+        exit(EXIT_FAILURE);
+    }
     memset(route, 0, sizeof(Sc_Route));
 
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
-
     if (server->routes == NULL) {
-        printf("Cannot realloc memory.\n");
+        perror("Routes realloc failed");
+        exit(EXIT_FAILURE);
     }
 
     server->routes[server->route_count].method = SC_POST;
@@ -359,13 +411,17 @@ void sc_post(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 void sc_put(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    if (route == NULL) {
+        perror("Route malloc failed");
+        exit(EXIT_FAILURE);
+    }
     memset(route, 0, sizeof(Sc_Route));
 
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
-
     if (server->routes == NULL) {
-        printf("Cannot realloc memory.\n");
+        perror("Routes realloc failed");
+        exit(EXIT_FAILURE);
     }
 
     server->routes[server->route_count].method = SC_PUT;
@@ -379,13 +435,17 @@ void sc_put(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 void sc_delete(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    if (route == NULL) {
+        perror("Route malloc failed");
+        exit(EXIT_FAILURE);
+    }
     memset(route, 0, sizeof(Sc_Route));
 
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
-
     if (server->routes == NULL) {
-        printf("Cannot realloc memory.\n");
+        perror("Routes realloc failed");
+        exit(EXIT_FAILURE);
     }
 
     server->routes[server->route_count].method = SC_DELETE;
@@ -399,13 +459,17 @@ void sc_delete(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 void sc_route(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
+    if (route == NULL) {
+        perror("Route malloc failed");
+        exit(EXIT_FAILURE);
+    }
     memset(route, 0, sizeof(Sc_Route));
 
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
-
     if (server->routes == NULL) {
-        printf("Cannot realloc memory.\n");
+        perror("Routes realloc failed");
+        exit(EXIT_FAILURE);
     }
 
     server->routes[server->route_count].method = SC_ALL;
@@ -419,9 +483,27 @@ void sc_route(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 void sc_static(Sc_Server *server, const char *uri, const char *folder) {
 
     char *abs_path = realpath(folder, NULL);
+    if (abs_path == NULL) {
+        perror("abs_path malloc failed");
+        exit(EXIT_FAILURE);
+    }
 
     server->static_uri = strdup(uri);
     server->static_folder = strdup(abs_path);
 
     free(abs_path);
+}
+
+
+void sc_free_server(Sc_Server *server) {
+
+    for (int i = 0; i < server->route_count; ++i) {
+        free(server->routes[i].uri);
+    }
+
+    free(server->routes);
+    free(server->host);
+    free(server->static_uri);
+    free(server->static_folder);
+    free(server);
 }

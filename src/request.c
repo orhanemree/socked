@@ -13,6 +13,7 @@
 Sc_Request *sc_parse_http_request(char *request) {
 
     Sc_Request *req = (Sc_Request *) malloc(sizeof(Sc_Request));
+    if (req == NULL) return NULL;
     memset(req, 0, sizeof(Sc_Request));
     
     char method[9];
@@ -39,6 +40,7 @@ Sc_Request *sc_parse_http_request(char *request) {
 
     size_t headers_len = body_p - headers_p;
     char *headers = (char *) malloc((headers_len+1)*sizeof(char));
+    if (headers == NULL) return NULL;
 
     strncpy(headers, headers_p, headers_len);
     headers[headers_len] = '\0';
