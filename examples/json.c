@@ -19,15 +19,16 @@ void handle_index(Sc_Request *req, Sc_Response *res) {
     // set content type header
     sc_set_header(res, "Content-Type", "application/json");
 
-    // status set 200 Ok by default
+    // status set 200 OK by default
 } 
+
 
 int main() {
 
     // create socket server
     Sc_Server *server = sc_server();
 
-    // register GET request handler on URL "/"
+    // register GET request handler at URL "/"
     sc_get(server, "/", handle_index);
 
     // start server and listen to requests
