@@ -6,12 +6,16 @@
 
 
 typedef enum {
+    SC_OPTIONS,
     SC_GET,
+    SC_HEAD,
     SC_POST,
     SC_PUT,
     SC_DELETE,
+    SC_TRACE,
+    SC_CONNECT,
     SC_ALL, // match with all methods
-    SC_UNK // unknown method
+    SC_UNK // unknown-invalid method
 } Sc_Method;
 
 

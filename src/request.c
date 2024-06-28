@@ -20,15 +20,23 @@ Sc_Request *sc_parse_http_request(char *request) {
     // parse first line: Method, Request-URI and HTTP-Version
     sscanf(request, "%s %s %s", method, req->uri, req->version);
 
-    if (strcmp(method, "GET") == 0) {
+    if (strcmp(method, "OPTIONS") == 0) {
+        req->method = SC_OPTIONS;
+    } else if (strcmp(method, "GET") == 0) {
         req->method = SC_GET;
+    } else if (strcmp(method, "HEAD") == 0) {
+        req->method = SC_HEAD;
     } else if (strcmp(method, "POST") == 0) {
         req->method = SC_POST;
     } else if (strcmp(method, "PUT") == 0) {
         req->method = SC_PUT;
     } else if (strcmp(method, "DELETE") == 0) {
         req->method = SC_DELETE;
-    }else {
+    } else if (strcmp(method, "TRACE") == 0) {
+        req->method = SC_TRACE;
+    } else if (strcmp(method, "CONNECT") == 0) {
+        req->method = SC_CONNECT;
+    } else {
         req->method = SC_UNK;
     }
 
