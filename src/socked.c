@@ -316,23 +316,67 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
     for (int i = 0; i < server->route_count; ++i) {
         
         // match route
-        if (strcmp(server->routes[i].uri, req->uri) == 0) {
 
-            route_matched = 1;
+        if (!(server->routes[i].has_dynamic_seg)) {
+            // uri has no dynmic segment
 
-            // match method
-            if (server->routes[i].method == SC_ALL ||
-                server->routes[i].method == req->method) {
+            if (strcmp(server->routes[i].uri, req->uri) == 0) {
 
-                sc_set_status(res, 200, "OK"); // by default
-                sc_set_body(res, " ");
-                res->is_body_set = 0;
+                route_matched = 1;
 
-                // route and method matched, run callback
-                server->routes[i].handler(req, res);
-                method_matched = 1;
+                // match method
+                if (server->routes[i].method == SC_ALL ||
+                    server->routes[i].method == req->method) {
 
-                return 1;
+                    sc_set_status(res, 200, "OK"); // by default
+                    sc_set_body(res, " ");
+                    res->is_body_set = 0;
+
+                    // route and method matched, run callback
+                    server->routes[i].handler(req, res);
+                    method_matched = 1;
+
+                    return 1;
+                }
+            }
+
+        } else {
+            // uri has dynamic segment
+
+            int dynamic_mathced = 1;
+
+            // match segment counts
+            if (req->seg_count == server->routes[i].seg_count) {
+                // segment counts match
+
+                for (int j = 0; j < req->seg_count; ++j) {
+
+                    // only compare not dynamic segments
+                    if (dynamic_mathced && !server->routes[i].seg_is_dynamic[j]) {
+                        
+                        if (strcmp(req->segments[j], server->routes[i].segments[j]) != 0) {
+                            dynamic_mathced = 0;
+                            continue;
+                        }
+                    }
+                }
+
+                if (dynamic_mathced) {
+
+                    // send dynamic route paramaters to req object
+                    for (int j = 0; j < req->seg_count; ++j) {
+                        if (server->routes[i].seg_is_dynamic[j]) {
+                            __sc_add_param(req, server->routes[i].segments[j]+1, req->segments[j]);
+                        }
+                    }
+
+                    server->routes[i].handler(req, res);
+                    return 1;
+                }
+
+            } else {
+                // segment counts dont match
+                continue;
             }
         }
     }
@@ -360,14 +404,37 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 }
 
 
-void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
+void __sc_parse_route_uri(Sc_Route *route, const char *uri) {
 
-    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
-    if (route == NULL) {
-        perror("Route malloc failed");
-        exit(EXIT_FAILURE);
+    route->segments = (char **) malloc(SC_MAX_SEG*sizeof(char *));
+    route->seg_count = 0;
+    // segments are not dynamic by default
+    memset(route->seg_is_dynamic, 0, SC_MAX_SEG);
+
+    char *uri_cpy = strdup(uri);
+    const char *seg;
+
+    seg = strtok(uri_cpy, "/");
+
+    while (seg != NULL) {
+        // it is a dynamic segment
+
+        route->segments[route->seg_count] = (char *) malloc((strlen(seg)+1)*sizeof(char));
+        route->segments[route->seg_count] = strdup(seg);
+
+        if (seg[0] == ':') {
+            if (!route->has_dynamic_seg) route->has_dynamic_seg = 1;
+            route->seg_is_dynamic[route->seg_count] = 1;
+        }
+        seg = strtok(NULL, "/");
+        route->seg_count++;
     }
-    memset(route, 0, sizeof(Sc_Route));
+
+    free(uri_cpy);
+}
+
+
+void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
@@ -375,6 +442,8 @@ void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
         perror("Routes realloc failed");
         exit(EXIT_FAILURE);
     }
+
+    __sc_parse_route_uri(&(server->routes[server->route_count]), uri);
 
     server->routes[server->route_count].method = SC_GET;
     server->routes[server->route_count].uri = strdup(uri);
@@ -386,19 +455,14 @@ void sc_get(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
 void sc_post(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
-    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
-    if (route == NULL) {
-        perror("Route malloc failed");
-        exit(EXIT_FAILURE);
-    }
-    memset(route, 0, sizeof(Sc_Route));
-
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
     if (server->routes == NULL) {
         perror("Routes realloc failed");
         exit(EXIT_FAILURE);
     }
+
+    __sc_parse_route_uri(&(server->routes[server->route_count]), uri);
 
     server->routes[server->route_count].method = SC_POST;
     server->routes[server->route_count].uri = strdup(uri);
@@ -410,19 +474,14 @@ void sc_post(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
 void sc_put(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
-    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
-    if (route == NULL) {
-        perror("Route malloc failed");
-        exit(EXIT_FAILURE);
-    }
-    memset(route, 0, sizeof(Sc_Route));
-
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
     if (server->routes == NULL) {
         perror("Routes realloc failed");
         exit(EXIT_FAILURE);
     }
+
+    __sc_parse_route_uri(&(server->routes[server->route_count]), uri);
 
     server->routes[server->route_count].method = SC_PUT;
     server->routes[server->route_count].uri = strdup(uri);
@@ -434,19 +493,14 @@ void sc_put(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
 void sc_delete(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
-    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
-    if (route == NULL) {
-        perror("Route malloc failed");
-        exit(EXIT_FAILURE);
-    }
-    memset(route, 0, sizeof(Sc_Route));
-
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
     if (server->routes == NULL) {
         perror("Routes realloc failed");
         exit(EXIT_FAILURE);
     }
+
+    __sc_parse_route_uri(&(server->routes[server->route_count]), uri);
 
     server->routes[server->route_count].method = SC_DELETE;
     server->routes[server->route_count].uri = strdup(uri);
@@ -458,19 +512,14 @@ void sc_delete(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
 void sc_route(Sc_Server *server, const char *uri, Sc_Route_Handler handler) {
 
-    Sc_Route *route = (Sc_Route *) malloc(sizeof(Sc_Route));
-    if (route == NULL) {
-        perror("Route malloc failed");
-        exit(EXIT_FAILURE);
-    }
-    memset(route, 0, sizeof(Sc_Route));
-
     server->routes = (Sc_Route *) realloc(server->routes,
         (server->route_count+1)*sizeof(Sc_Route));
     if (server->routes == NULL) {
         perror("Routes realloc failed");
         exit(EXIT_FAILURE);
     }
+
+    __sc_parse_route_uri(&(server->routes[server->route_count]), uri);
 
     server->routes[server->route_count].method = SC_ALL;
     server->routes[server->route_count].uri = strdup(uri);
@@ -499,6 +548,10 @@ void sc_free_server(Sc_Server *server) {
 
     for (int i = 0; i < server->route_count; ++i) {
         free(server->routes[i].uri);
+        for (int j = 0; j < server->routes[i].seg_count; ++j) {
+            free(server->routes[i].segments[j]);
+        }
+        free(server->routes[i].segments);
     }
 
     free(server->routes);

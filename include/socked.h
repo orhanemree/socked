@@ -10,6 +10,7 @@
 
 #define SC_MAX_REQ 1024*8
 #define SC_HTTP_VERSION "HTTP/1.1"
+#define SC_MAX_SEG 10 // max segment count of path
 
 
 typedef void (*Sc_Route_Handler)(Sc_Request*, Sc_Response*);
@@ -18,7 +19,12 @@ typedef void (*Sc_Route_Handler)(Sc_Request*, Sc_Response*);
 typedef struct {
     Sc_Method method; // HTTP Method
     char *uri; // HTTP URI
+    // TODO: think abt should uri be uri[255] ?
     Sc_Route_Handler handler; // callback function handles request
+    char **segments; // array of URI segments
+    size_t seg_count; // path segment count of route URI
+    int has_dynamic_seg; // does route have dynamic segment
+    int seg_is_dynamic[SC_MAX_SEG]; // array that holds is_dynamic state for each segment
 } Sc_Route;
 
 
@@ -52,6 +58,10 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res);
 
 // route handled request return success state do not run directly, runs in __sc_handle_request()
 int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res);
+
+
+// parse dynamic params in uri. do not run directly, runs in rule functions like sc_get() etc.
+void __sc_parse_route_uri(Sc_Route *route, const char *uri);
 
 
 // add get rule to server on the uri
