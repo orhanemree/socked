@@ -32,7 +32,8 @@ typedef struct {
 
 
 typedef struct {
-    Sc_Method method; // Request Method
+    Sc_Method imethod; // Request Method int
+    char *method; // Request method string
     char uri[255]; // Request-URI
     char **segments; // array of URI segments
     size_t seg_count; // path segment count of route URI

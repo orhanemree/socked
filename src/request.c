@@ -20,24 +20,26 @@ Sc_Request *sc_parse_http_request(char *request) {
     // parse first line: Method, Request-URI and HTTP-Version
     sscanf(request, "%s %s %s", method, req->uri, req->version);
 
+    req->method = strdup(method);
+
     if (strcmp(method, "OPTIONS") == 0) {
-        req->method = SC_OPTIONS;
+        req->imethod = SC_OPTIONS;
     } else if (strcmp(method, "GET") == 0) {
-        req->method = SC_GET;
+        req->imethod = SC_GET;
     } else if (strcmp(method, "HEAD") == 0) {
-        req->method = SC_HEAD;
+        req->imethod = SC_HEAD;
     } else if (strcmp(method, "POST") == 0) {
-        req->method = SC_POST;
+        req->imethod = SC_POST;
     } else if (strcmp(method, "PUT") == 0) {
-        req->method = SC_PUT;
+        req->imethod = SC_PUT;
     } else if (strcmp(method, "DELETE") == 0) {
-        req->method = SC_DELETE;
+        req->imethod = SC_DELETE;
     } else if (strcmp(method, "TRACE") == 0) {
-        req->method = SC_TRACE;
+        req->imethod = SC_TRACE;
     } else if (strcmp(method, "CONNECT") == 0) {
-        req->method = SC_CONNECT;
+        req->imethod = SC_CONNECT;
     } else {
-        req->method = SC_UNK;
+        req->imethod = SC_UNK;
     }
 
     // TODO: return 414 if uri > 255
@@ -217,6 +219,7 @@ void sc_free_request(Sc_Request *req) {
     free(req->headers);
     free(req->segments);
     free(req->params);
+    free(req->method);
     free(req->body);
     free(req);
 }

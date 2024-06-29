@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -152,9 +153,18 @@ int __sc_handle_request(Sc_Server *server, int client_socket) {
     char request[SC_MAX_REQ];
 
     recv(client_socket, request, SC_MAX_REQ, 0);
-    printf("==Request==\n%s====\n", request);
     Sc_Request *req = sc_parse_http_request(request);
     if (req == NULL) return -1;
+
+    // log request
+    // format: <%Y-%m-%dT%H:%M:%S%z> <METHOD> <URL>
+
+    time_t now = time(NULL);
+    struct tm *sTm;
+    sTm = localtime(&now);
+    char log_time[30];
+    strftime(log_time, sizeof(log_time), "%Y-%m-%d %H:%M:%S", sTm);
+    printf("[%s] %s http://%s:%d%s\n", log_time, req->method, server->host, server->port, req->uri);
 
     // prepare response
     Sc_Response *res = (Sc_Response *) malloc(sizeof(Sc_Response));
@@ -221,7 +231,7 @@ int __sc_handle_request(Sc_Server *server, int client_socket) {
 int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
     // static paths only handles GET 
-    if (req->method != SC_GET) {
+    if (req->imethod != SC_GET) {
         
         // another method instead of GET on static path
         // return 405
@@ -326,7 +336,7 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
                 // match method
                 if (server->routes[i].method == SC_ALL ||
-                    server->routes[i].method == req->method) {
+                    server->routes[i].method == req->imethod) {
 
                     sc_set_status(res, 200, "OK"); // by default
                     sc_set_body(res, " ");
