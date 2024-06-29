@@ -321,10 +321,12 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
     int route_matched = 0;
     int method_matched = 0;
+    int dynamic_mathced = 1;
+    int matched_dynamic_i = -1;
 
     // try for each rule
     for (int i = 0; i < server->route_count; ++i) {
-        
+
         // match route
 
         if (!(server->routes[i].has_dynamic_seg)) {
@@ -353,42 +355,50 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
         } else {
             // uri has dynamic segment
 
-            int dynamic_mathced = 1;
 
             // match segment counts
             if (req->seg_count == server->routes[i].seg_count) {
                 // segment counts match
 
-                for (int j = 0; j < req->seg_count; ++j) {
-
-                    // only compare not dynamic segments
-                    if (dynamic_mathced && !server->routes[i].seg_is_dynamic[j]) {
+                route_matched = 1;
+                
+                // match method
+                if (server->routes[i].method == SC_ALL ||
+                    server->routes[i].method == req->imethod) {
                         
-                        if (strcmp(req->segments[j], server->routes[i].segments[j]) != 0) {
-                            dynamic_mathced = 0;
-                            continue;
+                    for (int j = 0; j < req->seg_count; ++j) {
+
+                        // only compare not dynamic segments
+                        if (dynamic_mathced && !server->routes[i].seg_is_dynamic[j]) {
+                            
+                            if (strcmp(req->segments[j], server->routes[i].segments[j]) != 0) {
+                                dynamic_mathced = 0;
+                                continue;
+                            }
                         }
                     }
+
+                } else {
+                    dynamic_mathced = 0;
                 }
 
                 if (dynamic_mathced) {
-
-                    // send dynamic route paramaters to req object
-                    for (int j = 0; j < req->seg_count; ++j) {
-                        if (server->routes[i].seg_is_dynamic[j]) {
-                            __sc_add_param(req, server->routes[i].segments[j]+1, req->segments[j]);
-                        }
-                    }
-
-                    server->routes[i].handler(req, res);
-                    return 1;
+                    matched_dynamic_i = i;
                 }
-
-            } else {
-                // segment counts dont match
-                continue;
             }
         }
+    }
+
+    if (dynamic_mathced && matched_dynamic_i != -1) {
+        // send dynamic route paramaters to req object
+        for (int j = 0; j < req->seg_count; ++j) {
+            if (server->routes[matched_dynamic_i].seg_is_dynamic[j]) {
+                __sc_add_param(req, server->routes[matched_dynamic_i].segments[j]+1, req->segments[j]);
+            }
+        }
+
+        server->routes[matched_dynamic_i].handler(req, res);
+        return 1;
     }
 
     if (route_matched && !method_matched) {
