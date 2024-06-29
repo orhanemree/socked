@@ -14,7 +14,7 @@ Usage: python make.py [op] [program]
     make: compile program
     clean: clean .o and exec files
     
-[program]: extensionless filename to compile "main" by default if not given
+[program]: filename to compile "main.c" by default if not given
 
 """
 
@@ -22,49 +22,73 @@ Usage: python make.py [op] [program]
 CC = "gcc"
 FLAGS = ""
 
-INCLUDE = "include"
-SRC     = "src"
-OUT     = "out" # TODO: compile into OUT 
+SRC = "src"
+OUT = "./"
 
-disable_err = 0
 
-def make(program):
+def make(program_path, src_folder, out_folder, log=1):
     
-    print("Make program:", program)
+    """
+    Compile given (program_path) .c file with sources in (src_folder) folder
+    Return compiled executable path
+    """
     
-    sources = glob.glob(f"./{SRC}/*.c")
+    abs_program_path = os.path.abspath(program_path)
+    abs_src_folder   = os.path.abspath(src_folder)
+    abs_out_folder   = os.path.abspath(out_folder)
     
-    for f in sources:
+    program_name = abs_program_path.rsplit(".")[0].split("/")[-1]
+    
+    # LET HIM COOK!!!
+    if (log): print(f"Cooking: {program_name}")
+    
+    sources = glob.glob(f"{abs_src_folder}/*.c")
+    
+    for s in sources:
         # compile .o files
-        os.system(f"{CC} {FLAGS} -c {f} {'> /dev/null 2>&1' if disable_err else ''}")
+        s_name = s.rsplit(".")[0].split("/")[-1]
+        os.system(f"{CC} {FLAGS} -c {s} -o {abs_out_folder}/{s_name}.o")
     
-    objects = glob.glob(f"./*.o")
+    objects = glob.glob(f"{abs_out_folder}/*.o")
     
     # compile
-    os.system(f"{CC} {FLAGS} -o {program} {program}.c {' '.join(objects)}\
-{'> /dev/null 2>&1' if disable_err else ''}")
+    os.system(f"{CC} {FLAGS} -o {abs_out_folder}/{program_name} {abs_program_path} {' '.join(objects)}")
+    
+    return f"{abs_out_folder}/{program_name}"
     
 
-def clean(program):
+def clean(program_path, out_folder, log=1):
+    
+    """
+    Clean .o files and executable in (out_folder) folder
+    specified with (program_path) .c file generated with make()
+    """
+    
+    abs_program_path = os.path.abspath(program_path)
+    abs_out_folder   = os.path.abspath(out_folder)
+    
+    program_name = abs_program_path.rsplit(".")[0].split("/")[-1]
+    
+    if log: print(f"Cleaning: {program_name}")    
     
     # remove objects
-    objects = glob.glob(f"./*.o")
+    objects = glob.glob(f"{abs_out_folder}/*.o")
     
-    for f in objects:
-        os.system(f"rm {f}")
+    for o in objects:
+        os.system(f"rm {o}")
         
-    os.system(f"rm {program}")
+    os.system(f"rm {abs_out_folder}/{program_name}")
 
 
 if __name__ == "__main__":
     
     op = sys.argv[1]
-    program = "main"
+    program = "main.c"
     if (len(sys.argv) > 2):
         program = sys.argv[2]
     
     if op == "make":
-        make(program)
+        make(program, SRC, OUT)
     
     elif op == "clean":
-        clean(program)
+        clean(program, OUT)
