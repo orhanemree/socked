@@ -49,7 +49,7 @@ void sc_listen(Sc_Server *server, const char *host, int port);
 
 
 // handle selected request. do not run directly, runs in sc_listen()
-int __sc_handle_request(Sc_Server *server, int client_socket);
+int __sc_handle_request(int client_socket, Sc_Server *server, Sc_Request *req, Sc_Response *res);
 
 
 // handle static served path return success state do not run directly, runs in __sc_handle_request()
@@ -61,7 +61,8 @@ int __sc_route_request(Sc_Server *server, Sc_Request *req, Sc_Response *res);
 
 
 // parse dynamic params in uri. do not run directly, runs in rule functions like sc_get() etc.
-void __sc_parse_route_uri(Sc_Route *route, const char *uri);
+// return success status
+int __sc_parse_route_uri(Sc_Route *route, const char *uri);
 
 
 // add get rule to server on the uri
@@ -90,6 +91,12 @@ void sc_static(Sc_Server *server, const char *uri, const char *folder);
 
 // free server memory
 void sc_free_server(Sc_Server *server);
+
+
+void __sc_exit(int soc, Sc_Server *server, Sc_Request *req, Sc_Response *res, const char *text);
+
+
+void __sc_error(int client_soc, Sc_Request *req, Sc_Response *res, const char *text);
 
 
 #endif // SC_SOCKED_H

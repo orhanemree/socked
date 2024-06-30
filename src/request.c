@@ -87,6 +87,7 @@ Sc_Request *sc_parse_http_request(char *request) {
     char *p3, *p4;
     char *header = strtok_r(headers, SC_CRLF, &p3);
     char *name, *value;
+    int h_success;
 
     while (header != NULL) {
 
@@ -99,10 +100,12 @@ Sc_Request *sc_parse_http_request(char *request) {
 
         // TODO: make field names case-insensitive
 
-        __sc_add_header(req, name, value);
+        h_success = __sc_add_header(req, name, value);
 
         free(name);
         free(value);
+
+        if (h_success == -1) return NULL;
 
         header = strtok_r(NULL, SC_CRLF, &p3);
     }    
@@ -115,6 +118,7 @@ Sc_Request *sc_parse_http_request(char *request) {
     // parse URI segments
     req->seg_count = 0;
     req->segments = (char **) malloc(SC_MAX_SEG*sizeof(char *));
+    if (req->segments == NULL) return NULL;
 
     char *uri_cpy = strdup(req->uri);
     const char *seg;
@@ -123,6 +127,10 @@ Sc_Request *sc_parse_http_request(char *request) {
 
     while (seg != NULL) {
         req->segments[req->seg_count] = (char *) malloc((strlen(seg)+1)*sizeof(char));
+        if (req->segments[req->seg_count] == NULL) {
+            free(uri_cpy);
+            return NULL;
+        }
         req->segments[req->seg_count] = strdup(seg);
 
         seg = strtok(NULL, "/");
@@ -143,10 +151,7 @@ int __sc_add_header(Sc_Request *req, const char *header_name, const char *header
     req->headers = (Sc_Header *) realloc(req->headers,
         (req->header_count+1)*sizeof(Sc_Header));
     
-    if (req->headers == NULL) {
-        printf("Cannot realloc memory.\n");
-        return -1;
-    }
+    if (req->headers == NULL) return -1;
 
     req->headers[req->header_count].name = strdup(header_name);
     req->headers[req->header_count].value = strdup(header_value);
