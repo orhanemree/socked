@@ -20,6 +20,7 @@
         "stdlib.h": "c",
         "inet.h": "c",
         "helpers.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "sstream": "c"
     }
 }

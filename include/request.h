@@ -26,15 +26,21 @@ typedef struct {
 
 
 typedef struct {
-    char *key; // Parameter key
-    char *value; // Parameter value
+    char *key; // Route Parameter key
+    char *value; // Route Parameter value
 } Sc_Param;
+
+
+typedef struct {
+    char *key; // Query Parameter key
+    char *value; // Query Parameter value
+} Sc_Query;
 
 
 typedef struct {
     Sc_Method imethod; // Request Method int
     char *method; // Request method string
-    char uri[255]; // Request-URI
+    char *uri; // Request-URI
     char **segments; // array of URI segments
     size_t seg_count; // path segment count of route URI
     char version[9]; // HTTP-Version
@@ -43,6 +49,8 @@ typedef struct {
     char *body; // Request Body
     Sc_Param *params; // array of dynamic route parameters
     size_t param_count; // dynamic route parameters count
+    Sc_Query *query; // array of query parameters
+    size_t query_count; // query parameters count
 } Sc_Request;
 
 
@@ -64,18 +72,32 @@ int sc_req_has_header(Sc_Request *req, const char *header_name);
 char *sc_req_get_header(Sc_Request *req, const char *header_name);
 
 
-// add new parameter to params array in Request object
+// add new route parameter to params array in Request object
 // runs in __sc_route_request() in file /src/socked.c, do not run directly
 void __sc_add_param(Sc_Request *req, const char *param_key, const char *param_value);
 
 
-// check if Request object has specified parameter
+// check if Request object has specified route parameter
 int sc_has_param(Sc_Request *req, const char *param_key);
 
 
-// return copy of speficied paramter from Request object if exists, else return NULL
+// return copy of speficied route paramter from Request object if exists, else return NULL
 // run free() after used the value
 char *sc_get_param(Sc_Request *req, const char *param_key);
+
+
+// add new query parameter to query_params array in Request object
+// runs in sc_parse_http_request(), do not run directly
+void __sc_add_query(Sc_Request *req, const char *query_key, const char *query_value);
+
+
+// check if Request object has specified query parameter
+int sc_has_query(Sc_Request *req, const char *query_key);
+
+
+// return copy of speficied query paramter from Request object if exists, else return NULL
+// run free() after used the value
+char *sc_get_query(Sc_Request *req, const char *query_key);
 
 
 // free Request object

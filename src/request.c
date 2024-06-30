@@ -17,8 +17,31 @@ Sc_Request *sc_parse_http_request(char *request) {
     memset(req, 0, sizeof(Sc_Request));
     
     char method[9];
+    char uri[255];
     // parse first line: Method, Request-URI and HTTP-Version
-    sscanf(request, "%s %s %s", method, req->uri, req->version);
+    sscanf(request, "%s %s %s", method, uri, req->version);
+
+    // parse query params in uri
+    char *q_param_start = strchr(uri, '?');
+    if (q_param_start != NULL) {
+        // query param exist
+        size_t uri_len = q_param_start-uri;
+        req->uri = strndup(uri, uri_len);
+
+        char *p1, *p2;
+        char *q_param = strtok_r(q_param_start+1, ",", &p1); // skip '?' char
+        char *q_key, *q_value;
+        while (q_param != NULL) {
+            // parse key and values
+            q_key = strtok_r(q_param, "=", &p2);
+            q_value = p2;
+            __sc_add_query(req, q_key, q_value);
+            q_param = strtok_r(NULL, ",", &p1);
+        }
+
+    } else {
+        req->uri = strdup(uri);
+    }
 
     req->method = strdup(method);
 
@@ -61,18 +84,18 @@ Sc_Request *sc_parse_http_request(char *request) {
     // parse headers
     req->header_count = 0;
 
-    char *p1, *p2;
-    char *header = strtok_r(headers, SC_CRLF, &p1);
+    char *p3, *p4;
+    char *header = strtok_r(headers, SC_CRLF, &p3);
     char *name, *value;
 
     while (header != NULL) {
 
         // name field
-        name = strtok_r(header, ":", &p2);
+        name = strtok_r(header, ":", &p4);
         name = sc_trim(name);
 
         // the rest -value field
-        value = sc_trim(p2);
+        value = sc_trim(p4);
 
         // TODO: make field names case-insensitive
 
@@ -81,7 +104,7 @@ Sc_Request *sc_parse_http_request(char *request) {
         free(name);
         free(value);
 
-        header = strtok_r(NULL, SC_CRLF, &p1);
+        header = strtok_r(NULL, SC_CRLF, &p3);
     }    
 
     free(headers);
@@ -200,6 +223,47 @@ char *sc_get_param(Sc_Request *req, const char *param_key) {
 }
 
 
+void __sc_add_query(Sc_Request *req, const char *query_key, const char *query_value) {
+
+    req->query = (Sc_Query *) realloc(req->query,
+        (req->query_count+1)*sizeof(Sc_Query));
+    
+    if (req->query == NULL) {
+        printf("Cannot realloc memory.\n");
+    }
+
+    req->query[req->query_count].key = strdup(query_key);
+    req->query[req->query_count].value = strdup(query_value);
+
+    req->query_count++;
+}
+
+
+int sc_has_query(Sc_Request *req, const char *query_key) {
+
+    for (int i = 0; i < req->query_count; ++i) {
+        if (strcmp(req->query[i].key, query_key) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+char *sc_get_query(Sc_Request *req, const char *query_key) {
+
+    for (int i = 0; i < req->query_count; ++i) {
+        if (strcmp(req->query[i].key, query_key) == 0) {
+            // return copy of original value
+            return strdup(req->query[i].value);
+        }
+    }
+
+    return NULL;
+}
+
+
 void sc_free_request(Sc_Request *req) {
 
     for (int i = 0; i < req->header_count; ++i) {
@@ -216,9 +280,16 @@ void sc_free_request(Sc_Request *req) {
         free(req->params[i].value);
     }
 
+    for (int i = 0; i < req->query_count; ++i) {
+        free(req->query[i].key);
+        free(req->query[i].value);
+    }
+
     free(req->headers);
     free(req->segments);
     free(req->params);
+    free(req->query);
+    free(req->uri);
     free(req->method);
     free(req->body);
     free(req);
