@@ -8,7 +8,7 @@
 /*
     The app simulates an auth request at path "/auth".
     Responds with 200 OK if auth is successful.
-    Responds with 401 Unauthorized if auth has faied.
+    Responds with 401 Unauthorized if auth has failed.
 */
 
 
