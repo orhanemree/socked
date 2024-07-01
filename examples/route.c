@@ -19,13 +19,15 @@ void handle_index(Sc_Request *req, Sc_Response *res) {
 
     // Do different operations for each method
 
-    if (req->method == SC_GET) {
+    if (req->imethod == SC_GET) {
+        // or strcmp(req->method, "GET") == 0
 
         sc_set_body(res, "Your method is GET!");
 
         // status is 200 by default
 
-    } else if (req->method == SC_POST) {
+    } else if (req->imethod == SC_POST) {
+        // or strcmp(req->method, "POST") == 0
 
         sc_set_body(res, "Your method is POST!");
 
