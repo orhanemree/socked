@@ -1,8 +1,35 @@
 # 🧦 Socked
 A minimalistic HTTP library written in pure C.
 
-Coming Soon.
+## `Hello, World!`
+* Simple `Hello, World!` example in Socked. See [`/examples`](https://github.com/orhanemree/socked/tree/master/examples) for more example.
 
+```c
+// app.c
+
+#include "include/socked.h"
+
+void handler(Sc_Request *req, Sc_Response *res) {
+    sc_set_body(res, "Hello, World!");
+}
+
+int main() {
+    Sc_Server *server = sc_server();
+
+    sc_get(server, "/", handler);
+
+    sc_listen(server, "127.0.0.1", 8080);
+}
+```
+
+## Quick Start
+* Coming Soon.
+
+## Features
+* Coming Soon.
+
+## API Reference
+* Coming Soon.
 
 ## Tests
 * You need Python and `requests` module to run tests. Examples (`/examples`) also used as test.
