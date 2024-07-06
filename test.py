@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 import signal
-import requests
+import requests # type: ignore
 
 from make import make, clean
 
@@ -82,7 +82,7 @@ def hello():
     os.kill(process.pid, signal.SIGINT)
         
     # clean example
-    clean(path, "./", 0)
+    clean(path, OUT, 0)
     
 
 def json():
@@ -116,7 +116,7 @@ def json():
     os.kill(process.pid, signal.SIGINT)
         
     # clean example
-    clean(path, "./", 0)
+    clean(path, OUT, 0)
 
 
 if __name__ == "__main__":
