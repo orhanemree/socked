@@ -262,7 +262,7 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
     if (is_path_dir) {
 
         if (req->uri[strlen(req->uri)-1] == '/') {
-            // retunr index.html
+            // return index.html
             char *new_abs_path = (char *) realloc(abs_path,
                 (abs_path_len+strlen("/index.html")+1)*sizeof(char));
             if (new_abs_path == NULL) return -1;
@@ -273,14 +273,17 @@ int __sc_handle_static(Sc_Server *server, Sc_Request *req, Sc_Response *res) {
 
         } else {
             // redirect to return index.html with correct relative path
-            sc_set_status(res, 301, "Moved Permanently");
-            sc_set_body(res, "");
+            sc_set_status(res, 307, "Temporary Redirect");
+            sc_set_body(res, "307 Temporary Redirect");
             res->is_body_set = 0;
 
-            char *redirect_path = (char *) malloc(strlen((req->uri)+2)*sizeof(char));
+            size_t redirect_path_len = strlen(req->uri)+1;
+            char *redirect_path = (char *) malloc((redirect_path_len+1)*sizeof(char));
             if (redirect_path == NULL) return -1;
+            redirect_path[0] = '\0';
             strcat(redirect_path, req->uri);
             strcat(redirect_path, "/");
+            redirect_path[redirect_path_len] = '\0';
 
             sc_set_header(res, "Location", redirect_path);
 
