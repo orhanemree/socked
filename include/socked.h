@@ -4,13 +4,9 @@
 
 #include <stdio.h>
 
+#include "utils.h"
 #include "request.h"
 #include "response.h"
-
-
-#define SC_MAX_REQ 1024*8
-#define SC_HTTP_VERSION "HTTP/1.1"
-#define SC_MAX_SEG 10 // max segment count of path
 
 
 typedef void (*Sc_Route_Handler)(Sc_Request*, Sc_Response*);

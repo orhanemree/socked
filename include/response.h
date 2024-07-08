@@ -2,7 +2,7 @@
 #define SC_RES_H
 
 
-#include "request.h"
+#include "utils.h"
 
 
 typedef struct {

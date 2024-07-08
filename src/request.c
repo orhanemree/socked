@@ -5,9 +5,6 @@
 
 #include "../include/helpers.h"
 #include "../include/request.h"
-#include "../include/socked.h"
-
-#define SC_CRLF "\r\n"
 
 
 Sc_Request *sc_parse_http_request(char *request) {

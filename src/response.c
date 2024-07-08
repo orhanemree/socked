@@ -5,7 +5,6 @@
 #include <sys/stat.h>
 
 #include "../include/response.h"
-#include "../include/socked.h"
 
 
 char *__sc_get_headers_as_text(Sc_Header *headers, size_t header_count) {
